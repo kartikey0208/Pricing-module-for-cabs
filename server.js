@@ -28,7 +28,7 @@ const authenticateJwt = (req, res, next) => {
 
 //setting up mongoDB schema,model and connection
 const userSchema = new mongoose.Schema({
-  username: {type: String},
+  username: { type: String },
   password: String,
   purchasedCourses: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }]
 });
@@ -50,7 +50,7 @@ const Admin = mongoose.model('Admin', adminSchema);
 const Constant = mongoose.model('Constant', constantSchema);
 
 mongoose.connect('mongodb+srv://kartikey02:0fFKHVdz8v8Xi1JY@cluster0.gakbdrh.mongodb.net/',
- { useNewUrlParser: true, useUnifiedTopology: true, dbName: "courses" });
+  { useNewUrlParser: true, useUnifiedTopology: true, dbName: "courses" });
 
 //routs section to handle API requests starts here
 
@@ -58,16 +58,16 @@ mongoose.connect('mongodb+srv://kartikey02:0fFKHVdz8v8Xi1JY@cluster0.gakbdrh.mon
 app.post('/admin/signup', async (req, res) => {
   const { username, password } = req.body;
   const admin = await Admin.findOne({ username });
-    if (admin) {
-      res.status(403).json({ message: 'Admin already exists' });
-    } else {
-      const obj = { username: username, password: password };
-      const newAdmin = new Admin(obj);
-      newAdmin.save();
-      const token = jwt.sign({ username, role: 'admin' }, SECRET, { expiresIn: '1h' });
-      res.json({ message: 'Admin created successfully', token });
-    }
-  });
+  if (admin) {
+    res.status(403).json({ message: 'Admin already exists' });
+  } else {
+    const obj = { username: username, password: password };
+    const newAdmin = new Admin(obj);
+    newAdmin.save();
+    const token = jwt.sign({ username, role: 'admin' }, SECRET, { expiresIn: '1h' });
+    res.json({ message: 'Admin created successfully', token });
+  }
+});
 
 app.post('/users/signup', async (req, res) => {
   const { username, password } = req.body;
@@ -106,43 +106,44 @@ app.post('/users/login', async (req, res) => {
 
 //return the calsulated answer to the user
 app.get('/calculate/:distance', authenticateJwt, async (req, res) => {
-  const distance = parseFloat(req.params.distance); // Parse the distance as a float
+  try {
+    const distance = parseFloat(req.params.distance);
 
-  // Fetch the latest constants from the database
-  const latestConstants = await Constant.findOne().sort({ timeStamp: -1 }).exec();
-  if (!latestConstants) {
-    return res.status(500).json({ message: 'Constants not found in the database' });
-  }
-
-  // Extract the constants (A, B) from the latest entry
-  const { A, B } = latestConstants;
-
-  // Determine the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-  const dayOfWeek = new Date().getDay();
-
-  // Set constant C based on the day of the week
-  let C;
-  if (dayOfWeek === 1 && distance > 3) {
-    // Monday distance > 3km (day 1)
-    A = 0;
-  } else {
-    switch (dayOfWeek) {
-      case 0: // Sunday
-        C = 95;
-        break;
-      case 1: // Monday
-      case 6: // Saturday
-        C = 90;
-        break;
-      default: // Tuesday, Wednesday, Thursday
-        C = 80;
-        break;
+    if (isNaN(distance) || distance <= 0) {
+      return res.status(400).json({ message: 'Invalid distance value. Distance must be a positive number.' });
     }
-  }
 
-  // Calculate the answer using the formula
-  const answer = A * distance + B * distance + C;
-  res.json({ answer });
+    const latestConstants = await Constant.findOne().sort({ timeStamp: -1 }).exec();
+    if (!latestConstants) {
+      return res.status(500).json({ message: 'Constants not found in the database' });
+    }
+
+    const { A, B } = latestConstants;
+    const dayOfWeek = new Date().getDay();
+
+    let C;
+    if (dayOfWeek === 1 && distance > 3) {
+      A = 0;
+    } else {
+      switch (dayOfWeek) {
+        case 0: // Sunday
+          C = 95;
+          break;
+        case 1: // Monday
+        case 6: // Saturday
+          C = 90;
+          break;
+        default: // Tuesday, Wednesday, Thursday
+          C = 80;
+          break;
+      }
+    }
+
+    const answer = A * distance + B * distance + C;
+    res.json({ answer });
+  } catch (error) {
+    res.status(500).json({ message: 'An error occurred while calculating the answer.' });
+  }
 });
 
 // Admin route to modify the constants
