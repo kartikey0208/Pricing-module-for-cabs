@@ -43,14 +43,13 @@ const constantSchema = new mongoose.Schema({
   timeStamp: { type: Date, default: Date.now },
   A: Number,
   B: Number,
-  C: Number,
 });
 
 const User = mongoose.model('User', userSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 const Constant = mongoose.model('Constant', constantSchema);
 
-mongoose.connect('mongodb+srv://kartikey02:0fFKHVdz8v8Xi1JY@cluster0.gakbdrh.mongodb.net/',
+mongoose.connect('mongodb+srv://kart#############.gakbdrh.mongodb.net/',
  { useNewUrlParser: true, useUnifiedTopology: true, dbName: "courses" });
 
 //routs section to handle API requests starts here
@@ -115,8 +114,31 @@ app.get('/calculate/:distance', authenticateJwt, async (req, res) => {
     return res.status(500).json({ message: 'Constants not found in the database' });
   }
 
-  // Extract the constants (A, B, C) from the latest entry
-  const { A, B, C } = latestConstants;
+  // Extract the constants (A, B) from the latest entry
+  const { A, B } = latestConstants;
+
+  // Determine the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+  const dayOfWeek = new Date().getDay();
+
+  // Set constant C based on the day of the week
+  let C;
+  if (dayOfWeek === 1 && distance > 3) {
+    // Monday distance > 3km (day 1)
+    A = 0;
+  } else {
+    switch (dayOfWeek) {
+      case 0: // Sunday
+        C = 95;
+        break;
+      case 1: // Monday
+      case 6: // Saturday
+        C = 90;
+        break;
+      default: // Tuesday, Wednesday, Thursday
+        C = 80;
+        break;
+    }
+  }
 
   // Calculate the answer using the formula
   const answer = A * distance + B * distance + C;
@@ -125,13 +147,13 @@ app.get('/calculate/:distance', authenticateJwt, async (req, res) => {
 
 // Admin route to modify the constants
 app.post('/admin/update-constants', authenticateJwt, async (req, res) => {
-  const { A, B, C } = req.body;
+  const { A, B } = req.body;
 
   // Get the username of the admin who is modifying the constants
   const adminUsername = req.user.username;
 
   // Create a new entry with the updated constants
-  const newConstants = new Constant({ modifiedBy: adminUsername, A, B, C });
+  const newConstants = new Constant({ modifiedBy: adminUsername, A, B });
 
   try {
     // Save the new constants to the database
