@@ -27,6 +27,10 @@ Defined routes to respond to API requests.
 Step7:
 Started the server on say  `{$port}` = `5000`
 
+Step8: 
+Include a postmanCollection.json file which can be imported in postman and can be used to 
+test my code easily.
+
 Now i will dive deep into the step 6 because there the logic lies.
 ............ to be continued. 
 

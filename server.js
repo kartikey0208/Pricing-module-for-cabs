@@ -49,7 +49,7 @@ const User = mongoose.model('User', userSchema);
 const Admin = mongoose.model('Admin', adminSchema);
 const Constant = mongoose.model('Constant', constantSchema);
 
-mongoose.connect('mongodb+srv://kart#############.gakbdrh.mongodb.net/',
+mongoose.connect('mongodb+srv://kartikey02:0fFKHVdz8v8Xi1JY@cluster0.gakbdrh.mongodb.net/',
  { useNewUrlParser: true, useUnifiedTopology: true, dbName: "courses" });
 
 //routs section to handle API requests starts here
